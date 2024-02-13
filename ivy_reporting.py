@@ -10,18 +10,21 @@ skirian@bgsu.edu
 
 
 Script assumes .csv file exported from Ivy.ai with following filters:
-Chat Start Time, Chat Length, Messages to Bot, Bot Responses (Generative),
-Bot Responses (Retrieval), Bot Responses (Low Confidence),
-Bot Responses (No Confidence), Attempt to Connect to Live Person,
-Connection Established, Conversation Rating
+
+Chat Start Time, Chat Length, Buttons Clicked, Messages to Bot,
+Bot Responses (Generative), Bot Responses (Retrieval),
+Bot Responses (Low Confidence), Bot Responses (No Confidence),
+Attempt to Connect to Live Person, Connection Established, Conversation Rating
+
 NOTE: Data Lake export will include an additional column of data, Chat ID,
 which is implicit in all exports and is not filterable.
 """
 
+import sys
+import os
 import csv
 import calendar             #https://docs.python.org/3/library/calendar.html
 import string
-import sys
 
 #Service Desk hours in minutes of the day
 weekend_open = 660          #11:00am
@@ -53,6 +56,7 @@ class Report:
     total_no_conf = 0           #sum Bot Responses (No Confidence)
     total_live_request = 0      #sum requests for live chat
     total_live_connect = 0      #sum successful connections to live agent
+    pushes = 0                  #total number of button clicks
     
     ah_chats = 0                #unique chats after hours
     ah_messages = 0             #sum messages to bot after hours
@@ -175,14 +179,51 @@ class Report:
         Print monthly reporting data to csv file. One line = one month.
         """
         
+        #test if log file already exits and flag new_log accordingly
+        new_log = True
+
+        if os.path.isfile('ivy_log.csv'):
+            print("Log file already exists. Writing to existing file.\n")
+            new_log = False
+        else:
+            print("No existing log file was found. Creating new log file.\n")
+            new_log = True
+        
+        #Write file
         bot_report = open('ivy_log.csv', 'a')
         
+        #if this is a new log, add column labels
+        if new_log:
+            header = 'Month,'
+            header += 'Fiscal Year,'
+            header += 'Total Chats Filtered,'
+            header += 'Filtered: no Time,'
+            header += 'Filtered: no Messages,'
+            header += 'Total Chats,'
+            header += 'Total Messages from Users,'
+            header += 'Total Generative Responses,'
+            header += 'Total Retrieval Responses,'
+            header += 'Total Low-Confidence Responses,'
+            header += 'Total No-Confidence Responses,'
+            header += 'Accuracy Rate,'
+            header += 'Resolution Rate,'
+            header += 'Average Rating,'
+            header += 'Total Live Chat Requests,'
+            header += 'Total Live Chat Connections,'
+            header += 'Total After-hours Chats,'
+            header += 'Percentage of Total Chats Occuring After-hours,'
+            header += 'After-hours Resolution Rate,'
+            header += 'After-hours Live Chat Requests,'
+            
+            bot_report.write(header)
+        
+        #write the month's report
         bot_report.write('\n')              #start new month on new line
         
         #line template
-        line = '{month},{year},{filtered},{notime},{nomess},{chats},{nummess}'
-        line += '{genresp},{retresp},{lowresp},{noresp},{accuracy},{rez},{rating}'
-        line += '{reqlive},{connlive},{ahchats},{percentah},{rezah},{live_req_ah}'
+        line = '{month},{year},{filtered},{notime},{nomess},{chats},{nummess},'
+        line += '{genresp},{retresp},{lowresp},{noresp},{accuracy},{rez},{rating},'
+        line += '{reqlive},{connlive},{ahchats},{percentah},{rezah},{live_req_ah},'
         
         #fill template
         bot_report.write(line.format(\
@@ -295,7 +336,7 @@ def read_report():
         sys.exit(0)
 
     log = csv.DictReader(csvfile, fieldnames= ("chat_id", "start_time",
-    "length", "user_messages", "bot_gen", "bot_retrieval",
+    "length", "buttons", "user_messages", "bot_gen", "bot_retrieval",
     "bot_low_conf", "bot_no_conf", "live_request", "live_connect",
     "rating"))
     
@@ -326,11 +367,18 @@ def read_report():
         #flags first of two conditions for "resolved chat"
         rez_flag = False
         
-        #Read-in report attributes
+        #Read in report attributes
         if after_hours:
             report.ah_chats += 1
         else:
             report.bh_chats += 1
+
+        if chat["buttons"]:
+            for character in chat["buttons"]:
+                if character.isnumeric():
+                    report.pushes += int(character)
+                else:
+                    continue
 
         if chat["user_messages"]:
             if after_hours:
