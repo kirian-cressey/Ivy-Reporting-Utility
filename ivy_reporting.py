@@ -17,7 +17,8 @@ Bot Responses (Low Confidence), Bot Responses (No Confidence),
 Attempt to Connect to Live Person, Connection Established, Conversation Rating
 
 NOTE: Data Lake export will include an additional column of data, Chat ID,
-which is implicit in all exports and is not filterable.
+which is implicit in all exports and is not filterable. Chat ID will be
+included as the first column of any Data Lake export.
 """
 
 import sys
@@ -41,7 +42,7 @@ class Report:
     Report assumes a one-month period, but there is nothing stopping a user
     from using another unit of time. Period of time depends on the Data Lake
     file read in, and user will define this period of time (month, fiscal year)
-    through input.
+    through input for month.
     """
     
     #get from user
@@ -58,6 +59,7 @@ class Report:
     total_live_connect = 0      #sum successful connections to live agent
     pushes = 0                  #total number of button clicks
     
+    #After-hours attributes
     ah_chats = 0                #unique chats after hours
     ah_messages = 0             #sum messages to bot after hours
     ah_gen = 0                  #sum generative responses after hours
@@ -69,6 +71,7 @@ class Report:
     ah_resolved = 0             #sum chats with high conf. resp. after hours
     ah_by_percent = 0.0         #percentage of chats occuring after hours
     
+    #Business-hours attributes
     bh_chats = 0
     bh_messages = 0             #unique chats during business hours
     bh_messages = 0             #sum messages to bot during business hours
@@ -92,31 +95,43 @@ class Report:
     resolution_rate = 0         #resolved_chats / total_chats
     sum_ratings = 0             #sum of all ratings (meaningless on its own)
     num_ratings = 0             #total number of chats rated
+    average_rating = 0          #(sum of ratings / number of chats rated) / 5
 
     
     def calculate_attributes(self):
+        
         self.total_chats = self.ah_chats + self.bh_chats
         self.total_user_messages = self.ah_messages + self.bh_messages
         
-        if not self.ah_gen:
-            self.ah_gen = 0
-        if not self.bh_gen:
-            self.bh_gen = 0
         self.total_gen = int(self.ah_gen) + int(self.bh_gen)
-        
         self.total_retrieval = self.ah_retrieval + self.bh_retrieval
         self.total_high_conf = self.total_gen + self.total_retrieval
+        
         self.total_low_conf = self.ah_low_conf + self.bh_low_conf
         self.total_no_conf = self.ah_no_conf + self.bh_no_conf
+        self.resolved_chats = self.ah_resolved + self.bh_resolved
+        self.total_live_request = self.bh_live_request + self.ah_live_request
+        self.total_live_connect = self.bh_live_connect + self.ah_live_connect
         self.total_responses = self.total_gen + self.total_retrieval \
             + self.total_low_conf + self.total_no_conf
-        self.accuracy_rate = self.total_high_conf / self.total_chats
-        self.resolved_chats = self.ah_resolved + self.bh_resolved
-        self.resolution_rate = self.resolved_chats / self.total_chats
-        if self.num_ratings:             #avoid div / 0
+        
+        #Avoid division by zero errors for the remaining attributes
+        if self.total_chats:
+            self.accuracy_rate = self.total_high_conf / self.total_chats
+        else: self.accuracy_rate = 0
+        
+        if self.total_chats:
+            self.resolution_rate = self.resolved_chats / self.total_chats
+        else: self.resolution_rate = 0
+        
+        if self.num_ratings:
             self.average_rating = self.sum_ratings / self.num_ratings
-        self.ah_by_percent=float(self.ah_chats) / float(self.total_chats)*100
-
+        else: average_rating = 0
+        
+        if self.total_chats:
+            self.ah_by_percent=float(self.ah_chats) / float(self.total_chats)
+        else: self.ah_by_percent = 0
+        
 
     def get_month(self):
         
@@ -126,6 +141,7 @@ class Report:
         year_ask = "Please enter the fiscal year of the report: "
         self.fy = input(year_ask)
 
+    
     def debug_print(self):
         """Method to print raw data summary being read into report"""
 
@@ -212,7 +228,7 @@ class Report:
             header += 'Total Live Chat Connections,'
             header += 'Total After-hours Chats,'
             header += 'Percentage of Total Chats Occuring After-hours,'
-            header += 'After-hours Resolution Rate,'
+            header += 'Chats Resolved After-hours,'
             header += 'After-hours Live Chat Requests,'
             
             bot_report.write(header)
@@ -428,7 +444,7 @@ def read_report():
             if after_hours:
                 report.ah_live_connect += 1
             else:
-                report.ah_live_connect += 1
+                report.bh_live_connect += 1
 
         if chat["rating"]:
             report.sum_ratings += float(chat["rating"])
@@ -441,11 +457,10 @@ def read_report():
     report.calculate_attributes()
     if report.num_ratings:             #avoid div / 0
         report.average_rating = report.sum_ratings / report.num_ratings
-    #FIXME: else what? How to handle months with no ratings?
     
     return report
 
-#*************************DO THE THING****************************************
+#*************************DO THE THING*****************************************
 
 #read in a report object from a Data Lake .csv
 monthly_report = read_report()

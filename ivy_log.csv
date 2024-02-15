@@ -1,3 +1,8 @@
-Month,Fiscal Year,Total Chats Filtered,Filtered: no Time,Filtered: no Messages,Total Chats,Total Messages from Users,Total Generative Responses,Total Retrieval Responses,Total Low-Confidence Responses,Total No-Confidence Responses,Accuracy Rate (%),Resolution Rate (%),Average Rating,Total Live Chat Requests,Total Live Chat Connections,Total After-hours Chats,Percentage of Total Chats Occuring After-hours (%),After-hours Resolution Rate (%),After-hours Live Chat Requests,
-January,2024,1369,1046,1369,994,1419,333,565,84,402,0.903420523138833,0.3420523138832998,4.190839694656488,0,0,61,6.1368209255533195,50,1,
-January,2024,1369,1046,1369,994,1419,333,565,84,402,0.903420523138833,0.3420523138832998,4.190839694656488,0,0,61,6.1368209255533195,50,1,
+Month,Fiscal Year,Total Chats Filtered,Filtered: no Time,Filtered: no Messages,Total Chats,Total Messages from Users,Total Generative Responses,Total Retrieval Responses,Total Low-Confidence Responses,Total No-Confidence Responses,Accuracy Rate,Resolution Rate,Average Rating,Total Live Chat Requests,Total Live Chat Connections,Total After-hours Chats,Percentage of Total Chats Occuring After-hours,Chats Resolved After-hours,After-hours Live Chat Requests,
+December,2024,838,699,838,479,698,180,278,52,186,0.9561586638830898,0.36116910229645094,4.320987654320987,278,210,232,0.48434237995824636,77,145,
+January,2024,1368,1046,1368,993,1417,332,565,84,401,0.9033232628398792,0.3413897280966767,4.190839694656488,606,459,495,0.4984894259818731,174,301,
+Test rez_flag,3024,1368,1046,1368,993,1417,332,565,84,401,0.9033232628398792,0.3413897280966767,4.190839694656488,606,459,495,0.4984894259818731,174,301,
+
+BlankTest,0000,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,
+divbyzerotest,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+JanTest,2024,1368,1046,1368,993,1417,332,565,84,401,0.5689828801611279,0.3413897280966767,4.190839694656488,606,459,495,0.4984894259818731,174,301,
