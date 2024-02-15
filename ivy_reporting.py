@@ -85,8 +85,6 @@ class Report:
 
     #calculated attrubutes
     filtered_chats = 0          #chats not counted in total: no time or message
-    time_filtered = 0           #chats filtered due to no time
-    message_filtered = 0        #chats filtered due to no messages
     total_chats = 0             #total number of unique chats
     total_high_conf = 0         #total_retrival + total_gen
     total_responses = 0         #retrieval + gen + low + no
@@ -156,9 +154,7 @@ class Report:
     def print_to_term(self):
         
         print("\nNote: ", self.filtered_chats, \
-            "chats were filtered from data.\n",\
-            "     ", self.time_filtered, " chats had zero time\n",\
-            "     ", self.message_filtered, " chats had zero messages\n\n")
+            "chats were filtered from data.\n\n")
         print("TOTALS")
         print("Chats served: ", self.total_chats)
         print("Chats with a high confidence response: ",
@@ -213,8 +209,6 @@ class Report:
             header = 'Month,'
             header += 'Fiscal Year,'
             header += 'Total Chats Filtered,'
-            header += 'Filtered: no Time,'
-            header += 'Filtered: no Messages,'
             header += 'Total Chats,'
             header += 'Total Messages from Users,'
             header += 'Total Generative Responses,'
@@ -237,7 +231,7 @@ class Report:
         bot_report.write('\n')              #start new month on new line
         
         #line template
-        line = '{month},{year},{filtered},{notime},{nomess},{chats},{nummess},'
+        line = '{month},{year},{filtered},{chats},{nummess},'
         line += '{genresp},{retresp},{lowresp},{noresp},{accuracy},{rez},{rating},'
         line += '{reqlive},{connlive},{ahchats},{percentah},{rezah},{live_req_ah},'
         
@@ -246,8 +240,6 @@ class Report:
             month=self.month,\
             year=self.fy,\
             filtered=self.filtered_chats,\
-            notime=self.time_filtered,\
-            nomess=self.message_filtered,\
             chats=self.total_chats,\
             nummess=self.total_user_messages,\
             genresp=self.total_gen,\
@@ -361,22 +353,21 @@ def read_report():
     #parse file data
     for chat in log:
         
-        """
-        Comment out block below marked FILTER to turn off filtering.
-        Note that chats with only of button clicks will show zero responses.
-        At this time Data Lake does not provide any exposure to buttons.
-        """
+        #flags first of two conditions for "resolved chat"
+        rez_flag = False
         
-        #FILTER: do not include data for chats with no time or messages
-        if not chat["length"] or not chat["user_messages"]:
-            if not chat["length"]:
-                report.time_filtered +=1
-            if not chat["user_messages"]:
-                report.message_filtered += 1
-            report.filtered_chats += 1
-            continue
+        #flag if button was pushed by user
+        buttons_pushed = False
+       
+        #do not include chats with no time or messages unless buttons used
+        if (not chat["length"] or not chat["user_messages"]):
+            if chat["buttons"] == "null":
+                report.filtered_chats += 1
+                continue
+            else:
+                #Continue to evaluate if buttons were clicked
+                pass
         
-            
         #determine if chat was after hours
         after_hours = check_hours(chat["start_time"])
         
@@ -390,12 +381,15 @@ def read_report():
             report.bh_chats += 1
 
         if chat["buttons"]:
+            if chat["buttons"] != "null":
+                buttons_pushed = True
+            
             for character in chat["buttons"]:
                 if character.isnumeric():
                     report.pushes += int(character)
                 else:
                     continue
-
+            
         if chat["user_messages"]:
             if after_hours:
                 report.ah_messages += int(chat["user_messages"])
@@ -414,7 +408,7 @@ def read_report():
             else:
                 report.bh_retrieval += int(chat["bot_retrieval"])
         
-        if chat["bot_gen"] or chat["bot_retrieval"]:
+        if chat["bot_gen"] or chat["bot_retrieval"] or buttons_pushed:
             rez_flag = True
 
         if chat["bot_low_conf"]:
