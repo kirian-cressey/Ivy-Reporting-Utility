@@ -114,8 +114,8 @@ class Report:
             + self.total_low_conf + self.total_no_conf
         
         #Avoid division by zero errors for the remaining attributes
-        if self.total_chats:
-            self.accuracy_rate = self.total_high_conf / self.total_chats
+        if self.total_user_messages:
+            self.accuracy_rate = self.total_high_conf / self.total_user_messages
         else: self.accuracy_rate = 0
         
         if self.total_chats:
@@ -160,13 +160,14 @@ class Report:
         print("Chats with a high confidence response: ",
             self.resolved_chats)
         print("Messages from users: ", self.total_user_messages)
+        print("Button pushes: ", self.pushes)
         print("Generative responses: ", self.total_gen)
         print("Retrieval responses: ", self.total_retrieval)
         print("Low confidence responses: ", self.total_low_conf)
         print("No confidence responses: ", self.total_no_conf)
         if self.total_chats:          #avoid div by 0
             print("Accuracy rate: ",
-                (self.total_high_conf / self.total_chats) * 100, "%")
+                (self.total_high_conf / self.total_user_messages) * 100, "%")
         if self.total_chats:          #avoid div by 0
             print("Resolution rate: ",
                 (self.resolved_chats / self.total_chats) * 100, "%")
@@ -208,9 +209,10 @@ class Report:
         if new_log:
             header = 'Month,'
             header += 'Fiscal Year,'
-            header += 'Total Chats Filtered,'
+            header += 'Chats Filtered from Results,'
             header += 'Total Chats,'
             header += 'Total Messages from Users,'
+            header += 'Total Button Use,'
             header += 'Total Generative Responses,'
             header += 'Total Retrieval Responses,'
             header += 'Total Low-Confidence Responses,'
@@ -231,7 +233,7 @@ class Report:
         bot_report.write('\n')              #start new month on new line
         
         #line template
-        line = '{month},{year},{filtered},{chats},{nummess},'
+        line = '{month},{year},{filtered},{chats},{nummess},{buttons},'
         line += '{genresp},{retresp},{lowresp},{noresp},{accuracy},{rez},{rating},'
         line += '{reqlive},{connlive},{ahchats},{percentah},{rezah},{live_req_ah},'
         
@@ -242,6 +244,7 @@ class Report:
             filtered=self.filtered_chats,\
             chats=self.total_chats,\
             nummess=self.total_user_messages,\
+            buttons=self.pushes,\
             genresp=self.total_gen,\
             retresp=self.total_retrieval,\
             lowresp=self.total_low_conf,\
@@ -310,9 +313,6 @@ def check_hours(start_time):
             after_hours = False
         else:
             after_hours = True
-    else:
-        #FIXME: Handle this better
-        raise SystemExit(0)
     
     return after_hours
 
@@ -451,6 +451,8 @@ def read_report():
     report.calculate_attributes()
     if report.num_ratings:             #avoid div / 0
         report.average_rating = report.sum_ratings / report.num_ratings
+    else:
+        report.average_rating = 0
     
     return report
 
