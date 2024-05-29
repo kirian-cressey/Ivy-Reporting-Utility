@@ -1,0 +1,10 @@
+# ignore all .csv data files
+*.csv
+
+# ignore swap files
+*.swp
+*.swo
+
+*.ods
+*.xls
+*.xlsx
