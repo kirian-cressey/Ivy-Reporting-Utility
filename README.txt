@@ -24,7 +24,7 @@ Filtered: A chat which has either zero time or zero messages from user. Filtered
 
 Total Chats: The sum of all bot interactions that include one or more messages to the bot and last for more than zero seconds.
 
-Total Messages: The sum of all messages sent to the bot from users. Used to determine accuracy rate in Accuracy Rate column.
+Total Messages from Users: The sum of all messages sent to the bot from users.
 
 Total Button Use: Total number of times users clicked a button to interact with bot. May be multiple button pushes per chat interaction.
 
@@ -36,7 +36,9 @@ Total Low-confidence Responses: Number of responses fired by the bot in which th
 
 Total No-confidence Responses: Number of responses given by the bot to indicate that no appropriate response is available to the user’s inquiry.
 
-Accuracy Rate: [Total Generative Responses + Total Retrieval Response] / Total Messages
+Accuracy Rate: [Total Generative Responses + Total Retrieval Response] / [Total
+Generative Responses + Total Retrieval Response + Total Low Confidence
+Responses + Total No Confidence Responses]
 
 Resolution Rate: [Number of chats in which at least one Generative or Retrieval Response is fired, and user does not request live chat] / Total Chats
 

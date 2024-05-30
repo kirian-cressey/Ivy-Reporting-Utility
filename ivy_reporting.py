@@ -44,11 +44,11 @@ class Report:
     file read in, and user will define this period of time (month, fiscal year)
     through input for month.
     """
-    
+
     #get from user
     month = ''                  #i.e. 'October'
     fy = 0                      #fiscal year
-    
+
     #raw data attributes present in Data Lake csv file
     total_user_messages = 0     #sum Messages to Bot
     total_gen = 0               #sum Bot Responses (Generative)
@@ -58,7 +58,7 @@ class Report:
     total_live_request = 0      #sum requests for live chat
     total_live_connect = 0      #sum successful connections to live agent
     pushes = 0                  #total number of button clicks
-    
+
     #After-hours attributes
     ah_chats = 0                #unique chats after hours
     ah_messages = 0             #sum messages to bot after hours
@@ -70,7 +70,7 @@ class Report:
     ah_live_connect = 0         #Note: in theory, this should be zero
     ah_resolved = 0             #sum chats with high conf. resp. after hours
     ah_by_percent = 0.0         #percentage of chats occuring after hours
-    
+
     #Business-hours attributes
     bh_chats = 0
     bh_messages = 0             #unique chats during business hours
@@ -95,16 +95,20 @@ class Report:
     num_ratings = 0             #total number of chats rated
     average_rating = 0          #(sum of ratings / number of chats rated) / 5
 
-    
+
     def calculate_attributes(self):
-        
+
         self.total_chats = self.ah_chats + self.bh_chats
         self.total_user_messages = self.ah_messages + self.bh_messages
-        
+
         self.total_gen = int(self.ah_gen) + int(self.bh_gen)
         self.total_retrieval = self.ah_retrieval + self.bh_retrieval
+
+        #Comment this line out when running data prior to April 2024
+        self.total_retrieval = self.total_retrieval - self.total_chats
+
         self.total_high_conf = self.total_gen + self.total_retrieval
-        
+
         self.total_low_conf = self.ah_low_conf + self.bh_low_conf
         self.total_no_conf = self.ah_no_conf + self.bh_no_conf
         self.resolved_chats = self.ah_resolved + self.bh_resolved
@@ -112,34 +116,34 @@ class Report:
         self.total_live_connect = self.bh_live_connect + self.ah_live_connect
         self.total_responses = self.total_gen + self.total_retrieval \
             + self.total_low_conf + self.total_no_conf
-        
+
         #Avoid division by zero errors for the remaining attributes
-        if self.total_user_messages:
-            self.accuracy_rate = self.total_high_conf / self.total_user_messages
-        else: self.accuracy_rate = 0
-        
+        if self.total_responses:
+            self.accuracy_rate = self.total_high_conf / self.total_responses
+        else: self_accuracy_rate = 0
+
         if self.total_chats:
             self.resolution_rate = self.resolved_chats / self.total_chats
         else: self.resolution_rate = 0
-        
+
         if self.num_ratings:
             self.average_rating = self.sum_ratings / self.num_ratings
         else: average_rating = 0
-        
+
         if self.total_chats:
             self.ah_by_percent=float(self.ah_chats) / float(self.total_chats)
         else: self.ah_by_percent = 0
-        
+
 
     def get_month(self):
-        
+
         month_ask = "Please enter the month of the report (ie. \"October\"): "
         self.month = input(month_ask)
-        
+
         year_ask = "Please enter the fiscal year of the report: "
         self.fy = input(year_ask)
 
-    
+
     def debug_print(self):
         """Method to print raw data summary being read into report"""
 
@@ -152,7 +156,7 @@ class Report:
 
 
     def print_to_term(self):
-        
+
         print("\nNote: ", self.filtered_chats, \
             "chats were filtered from data.\n\n")
         print("TOTALS")
@@ -191,7 +195,7 @@ class Report:
         """
         Print monthly reporting data to csv file. One line = one month.
         """
-        
+
         #test if log file already exits and flag new_log accordingly
         new_log = True
 
@@ -201,10 +205,10 @@ class Report:
         else:
             print("No existing log file was found. Creating new log file.\n")
             new_log = True
-        
+
         #Write file
         bot_report = open('ivy_log.csv', 'a')
-        
+
         #if this is a new log, add column labels
         if new_log:
             header = 'Month,'
@@ -226,17 +230,17 @@ class Report:
             header += 'Percentage of Total Chats Occuring After-hours,'
             header += 'Chats Resolved After-hours,'
             header += 'After-hours Live Chat Requests,'
-            
+
             bot_report.write(header)
-        
+
         #write the month's report
         bot_report.write('\n')              #start new month on new line
-        
+
         #line template
         line = '{month},{year},{filtered},{chats},{nummess},{buttons},'
         line += '{genresp},{retresp},{lowresp},{noresp},{accuracy},{rez},{rating},'
         line += '{reqlive},{connlive},{ahchats},{percentah},{rezah},{live_req_ah},'
-        
+
         #fill template
         bot_report.write(line.format(\
             month=self.month,\
@@ -259,7 +263,7 @@ class Report:
             rezah=self.ah_resolved,\
             live_req_ah=self.ah_live_request
             ))
-            
+
         print("Write complete. Closing log file.")
         bot_report.close()
 
@@ -271,13 +275,13 @@ def check_hours(start_time):
     Hours can be adjusted by changing weekday_open, weekday_close,
     weekend_open, weekend_close.
     """
-    
+
     after_hours = False                 #will be returned
 
     #stripper will remove all punctuation listed on table at
     #string.punctuation when given as arg to str.translate(arg)
     stripper = str.maketrans('', '', string.punctuation)
-    
+
     #apply stripper to start time and split on spaces
     date = start_time.translate(stripper).split()
 
@@ -288,18 +292,18 @@ def check_hours(start_time):
     hour = int(int(time) / 100)     #get the hours in mil time
     minute = int(time) - (hour * 100)    #get the mins
     ampm = date[4]
-    
+
     if (ampm == "PM") and (hour != 12):
         hour += 12
     if (ampm == "AM") and (hour == 12):
         hour += 12
-        
+
     time_in_mins = (hour * 60) + minute #mins since yesterday
     month_abbr = months[month]
-    
+
     #day_of_week: Monday = 0, Sunday = 6, etc.
     day_of_week = calendar.weekday(int(year), month_abbr, int(day))
-    
+
     #determine if during or after hours
     if day_of_week <= 4:
         if (time_in_mins >= weekday_open) and \
@@ -313,7 +317,7 @@ def check_hours(start_time):
             after_hours = False
         else:
             after_hours = True
-    
+
     return after_hours
 
 
@@ -329,17 +333,17 @@ def read_report():
             filename = input('Please enter the name of an Ivy Data Lake file:\n')
             if filename == 'quit' or filename == 'q' or filename == 'Quit':
                 break
-            
+
             csvfile = open(filename, newline='')
-            
+
         except:
             print("\nInvalid filename. Enter filename or type 'quit'.\n")
             continue
-            
+
         else:
             valid_filename = True
             print("Data Lake file opened successfully...\n")
-    
+
     if valid_filename == False:
         sys.exit(0)
 
@@ -347,18 +351,18 @@ def read_report():
     "length", "buttons", "user_messages", "bot_gen", "bot_retrieval",
     "bot_low_conf", "bot_no_conf", "live_request", "live_connect",
     "rating"))
-    
+
     next(log)                   #skip first row containing column label
 
     #parse file data
     for chat in log:
-        
+
         #flags first of two conditions for "resolved chat"
         rez_flag = False
-        
+
         #flag if button was pushed by user
         buttons_pushed = False
-       
+
         #do not include chats with no time or messages unless buttons used
         if (not chat["length"] or not chat["user_messages"]):
             if chat["buttons"] == "null":
@@ -367,13 +371,13 @@ def read_report():
             else:
                 #Continue to evaluate if buttons were clicked
                 pass
-        
+
         #determine if chat was after hours
         after_hours = check_hours(chat["start_time"])
-        
+
         #flags first of two conditions for "resolved chat"
         rez_flag = False
-        
+
         #Read in report attributes
         if after_hours:
             report.ah_chats += 1
@@ -383,31 +387,31 @@ def read_report():
         if chat["buttons"]:
             if chat["buttons"] != "null":
                 buttons_pushed = True
-            
+
             for character in chat["buttons"]:
                 if character.isnumeric():
                     report.pushes += int(character)
                 else:
                     continue
-            
+
         if chat["user_messages"]:
             if after_hours:
                 report.ah_messages += int(chat["user_messages"])
             else:
                 report.bh_messages += int(chat["user_messages"])
-        
+
         if chat["bot_gen"]:
             if after_hours:
                 report.ah_gen += int(chat["bot_gen"])
             else:
                 report.bh_gen += int(chat["bot_gen"])
-    
+
         if chat["bot_retrieval"]:
             if after_hours:
                 report.ah_retrieval += int(chat["bot_retrieval"])
             else:
                 report.bh_retrieval += int(chat["bot_retrieval"])
-        
+
         if chat["bot_gen"] or chat["bot_retrieval"] or buttons_pushed:
             rez_flag = True
 
@@ -443,17 +447,17 @@ def read_report():
         if chat["rating"]:
             report.sum_ratings += float(chat["rating"])
             report.num_ratings += 1
-                    
+
     csvfile.close()
-    
-        
+
+
     #report read complete, now get derived attibutes
     report.calculate_attributes()
     if report.num_ratings:             #avoid div / 0
         report.average_rating = report.sum_ratings / report.num_ratings
     else:
         report.average_rating = 0
-    
+
     return report
 
 #*************************DO THE THING*****************************************
@@ -470,7 +474,7 @@ monthly_report.print_to_term()
 #Ask if the data should be written
 while True:
     print("\nWrite this data to log file?")
-    
+
     response = input("Enter 'Y' to write or 'Q' to quit: ")
 
     if response == 'Y' or response == 'y':
