@@ -142,53 +142,32 @@ class Report:
 
         year_ask = "Please enter the fiscal year of the report: "
         self.fy = input(year_ask)
-
-
-    def debug_print(self):
-        """Method to print raw data summary being read into report"""
-
-        print("Total chats = ", self.total_chats)
-        print("Total messages to bot = ", self.total_user_messages)
-        print("Total generative = ", self.total_gen)
-        print("Total retrieval = ", self.total_retrieval)
-        print("Total low confidence responses = ", self.total_low_conf)
         print("Total no confidence responses = ", self.total_no_conf)
 
 
     def print_to_term(self):
 
-        print("\nNote: ", self.filtered_chats, \
-            "chats were filtered from data.\n\n")
-        print("TOTALS")
-        print("Chats served: ", self.total_chats)
-        print("Chats with a high confidence response: ",
-            self.resolved_chats)
-        print("Messages from users: ", self.total_user_messages)
-        print("Button pushes: ", self.pushes)
-        print("Generative responses: ", self.total_gen)
-        print("Retrieval responses: ", self.total_retrieval)
-        print("Low confidence responses: ", self.total_low_conf)
-        print("No confidence responses: ", self.total_no_conf)
-        if self.total_chats:          #avoid div by 0
-            print("Accuracy rate: ",
-                (self.total_high_conf / self.total_user_messages) * 100, "%")
-        if self.total_chats:          #avoid div by 0
-            print("Resolution rate: ",
-                (self.resolved_chats / self.total_chats) * 100, "%")
-        if self.average_rating:
-            print("Average rating: ", self.average_rating, "/ 5")
-        print("Requests for live agents: ", \
-            self.ah_live_request + self.bh_live_request)
-        print("Chats connected with live agent: ", \
-            self.ah_live_connect + self.bh_live_connect)
-        print("\nAFTER HOURS")
-        print("Chats after hours: ", self.ah_chats)
-        print("Percentage of chats occuring after hours: ",\
-              self.ah_by_percent)
-        print("Resolved chats after hours: ", self.ah_resolved)
-        print("Low or no confidence response after hours: ", \
-            self.ah_low_conf + self.ah_no_conf)
-        print("Live agent requests after hours: ", self.ah_live_request)
+        print("The following data will be printed to file:\n")
+
+        print("month: ", self.month)
+        print("fiscal Year: ", self.fy)
+        print("chats filtered: ", self.filtered_chats)
+        print("total chats: ", self.total_chats)
+        print("user messages: ", self.total_user_messages)
+        print("button pushes: ", self.pushes)
+        print("generative responses: ", self.total_gen)
+        print("retrieval responses: ", self.total_retrieval)
+        print("low-confidence responses: ", self.total_low_conf)
+        print("no-confidence responses: ", self.total_no_conf)
+        print("accuracy rate: ", self.accuracy_rate)
+        print("resolution rate: ", self.resolution_rate)
+        print("average rating: ", self.average_rating)
+        print("live agent requests: ", self.total_live_request)
+        print("live agent connects: ", self.total_live_connect)
+        print("chats after-hours: ", self.ah_chats)
+        print("ratio of chats after-hours: ", self.ah_by_percent)
+        print("after-hours resolution: ", self.ah_resolved)
+        print("after-hours agent req: ", self.ah_live_request)
 
 
     def print_to_file(self):
