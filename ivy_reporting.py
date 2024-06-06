@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3
 
 """
-Script for reading Data Lake CSV file from Ivy.ai
+Script for reading Data Lake exports from Ivy.ai
 
 "His palms are sweaty, this is Scott's spaghetti."
 Scott Kirian-Cressey
@@ -26,8 +26,9 @@ import os
 import csv
 import calendar             #https://docs.python.org/3/library/calendar.html
 import string
+from optparse import OptionParser
 
-#Service Desk hours in minutes of the day
+#Service Desk hours defined as elapesed minutes of the day
 weekend_open = 660          #11:00am
 weekend_close = 1020        #5:00pm
 weekday_open = 450          #7:30am
@@ -61,7 +62,6 @@ class Report:
 
     #After-hours attributes
     ah_chats = 0                #unique chats after hours
-    ah_messages = 0             #sum messages to bot after hours
     ah_gen = 0                  #sum generative responses after hours
     ah_retrieval = 0            #sum retrieval after hours
     ah_low_conf = 0             #sum low confidence after hours
@@ -73,8 +73,6 @@ class Report:
 
     #Business-hours attributes
     bh_chats = 0
-    bh_messages = 0             #unique chats during business hours
-    bh_messages = 0             #sum messages to bot during business hours
     bh_gen = 0                  #sum generative responses during business
     bh_retrieval = 0            #sum retrieval responses during business
     bh_low_conf = 0             #sum low confidence during business
@@ -89,26 +87,28 @@ class Report:
     total_high_conf = 0         #total_retrival + total_gen
     total_responses = 0         #retrieval + gen + low + no
     resolved_chats = 0          #= >0 high conf. response + no live request
-    accuracy_rate = 0           #total_high_conf / total_user_messages
+    accuracy_rate = 0           #total_high_conf / total_responses
     resolution_rate = 0         #resolved_chats / total_chats
     sum_ratings = 0             #sum of all ratings (meaningless on its own)
     num_ratings = 0             #total number of chats rated
     average_rating = 0          #(sum of ratings / number of chats rated) / 5
 
 
-    def calculate_attributes(self):
+    def calculate_attributes(self, legacy_mode):
 
         self.total_chats = self.ah_chats + self.bh_chats
-        self.total_user_messages = self.ah_messages + self.bh_messages
-
         self.total_gen = int(self.ah_gen) + int(self.bh_gen)
         self.total_retrieval = self.ah_retrieval + self.bh_retrieval
 
-        #Comment this line out when running data prior to April 2024
-        self.total_retrieval = self.total_retrieval - self.total_chats
+        # in April 2024, chat intro was changed from a response to a pointer.
+        # this pointer counts as a retrieval response in Data Lake. Thus,
+        # just for opening chat, a retrieval is registered. To adjust for this
+        # we do the following for Data Lake pulls prior to April 2024:
+        if legacy_mode == False:
+            self.total_retrieval -= self.total_chats
+
 
         self.total_high_conf = self.total_gen + self.total_retrieval
-
         self.total_low_conf = self.ah_low_conf + self.bh_low_conf
         self.total_no_conf = self.ah_no_conf + self.bh_no_conf
         self.resolved_chats = self.ah_resolved + self.bh_resolved
@@ -142,7 +142,6 @@ class Report:
 
         year_ask = "Please enter the fiscal year of the report: "
         self.fy = input(year_ask)
-        print("Total no confidence responses = ", self.total_no_conf)
 
 
     def print_to_term(self):
@@ -170,7 +169,7 @@ class Report:
         print("after-hours agent req: ", self.ah_live_request)
 
 
-    def print_to_file(self):
+    def print_to_file(self, target_file):
         """
         Print monthly reporting data to csv file. One line = one month.
         """
@@ -178,7 +177,7 @@ class Report:
         #test if log file already exits and flag new_log accordingly
         new_log = True
 
-        if os.path.isfile('ivy_log.csv'):
+        if os.path.isfile(target_file):
             print("Log file already exists. Writing to existing file.\n")
             new_log = False
         else:
@@ -186,7 +185,7 @@ class Report:
             new_log = True
 
         #Write file
-        bot_report = open('ivy_log.csv', 'a')
+        bot_report = open(target_file, 'a')
 
         #if this is a new log, add column labels
         if new_log:
@@ -300,31 +299,23 @@ def check_hours(start_time):
     return after_hours
 
 
-def read_report():
+def read_report(filename, mode):
+
 
     report = Report()
-    valid_filename = False      #loop condition to get valid filename
 
     #Get Data Lake file name from user
-    while valid_filename == False:
 
-        try:
-            filename = input('Please enter the name of an Ivy Data Lake file:\n')
-            if filename == 'quit' or filename == 'q' or filename == 'Quit':
-                break
+    try:
+        csvfile = open(filename, newline='')
 
-            csvfile = open(filename, newline='')
-
-        except:
-            print("\nInvalid filename. Enter filename or type 'quit'.\n")
-            continue
-
-        else:
-            valid_filename = True
-            print("Data Lake file opened successfully...\n")
-
-    if valid_filename == False:
+    except:
+        print("Could not open that file. Please check file name")
         sys.exit(0)
+
+    else:
+        print("Data Lake file opened successfully...\n")
+
 
     log = csv.DictReader(csvfile, fieldnames= ("chat_id", "start_time",
     "length", "buttons", "user_messages", "bot_gen", "bot_retrieval",
@@ -374,10 +365,7 @@ def read_report():
                     continue
 
         if chat["user_messages"]:
-            if after_hours:
-                report.ah_messages += int(chat["user_messages"])
-            else:
-                report.bh_messages += int(chat["user_messages"])
+            report.total_user_messages += int(chat["user_messages"])
 
         if chat["bot_gen"]:
             if after_hours:
@@ -431,7 +419,7 @@ def read_report():
 
 
     #report read complete, now get derived attibutes
-    report.calculate_attributes()
+    report.calculate_attributes(mode)
     if report.num_ratings:             #avoid div / 0
         report.average_rating = report.sum_ratings / report.num_ratings
     else:
@@ -441,16 +429,26 @@ def read_report():
 
 #*************************DO THE THING*****************************************
 
-#read in a report object from a Data Lake .csv
-monthly_report = read_report()
+# get options passed through CLI
+parser = OptionParser()
+parser.add_option("-l", "--legacy", action="store_true", dest="legacy_mode",
+    default=False)
+parser.add_option("-t", "--target", action="store", dest="target_file",
+    default="ivy_log.csv")
+parser.add_option("-s", "--source", action="store", dest="source_file")
+(options, args) = parser.parse_args()
 
-#Ask user for month and fical year. This avoids some errors with ivy's data
+
+# read in a report object from a Data Lake .csv
+monthly_report = read_report(options.source_file, options.legacy_mode)
+
+# Ask user for month and fical year. This avoids some errors with ivy's data
 monthly_report.get_month()
 
-#Let user inspect the data before writing to log
+# Let user inspect the data before writing to log
 monthly_report.print_to_term()
 
-#Ask if the data should be written
+# Ask if the data should be written
 while True:
     print("\nWrite this data to log file?")
 
@@ -464,8 +462,8 @@ while True:
         print("Invalid input.\n")
         continue
 
-#write the log file
-monthly_report.print_to_file()
+# write the log file
+monthly_report.print_to_file(options.target_file)
 
-#be nice
+# be nice
 print("Finished")
