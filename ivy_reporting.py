@@ -44,6 +44,8 @@ class Report:
     through interactive input.
     """
 
+    new_log = True              # true if target new, false if target exists.
+
     # get from user
     month = ''                  #i.e. 'October'
     fy = 0                      #fiscal year
@@ -172,22 +174,11 @@ class Report:
         Print monthly reporting data to csv file. One line = one month.
         """
 
-        # test if log file already exits and flag new_log accordingly
-        new_log = True
-
-        if os.path.isfile(target_file):
-            print(target_file, " already exists. Appending to existing file.")
-            print("\n")
-            new_log = False
-        else:
-            print("No existing log file was found. Creating new log file.\n")
-            new_log = True
-
         # write file
         bot_report = open(target_file, 'a')
 
         # if this is a new log, add column labels
-        if new_log:
+        if self.new_log:
             header = 'Month,'
             header += 'Fiscal Year,'
             header += 'Chats Filtered from Results,'
@@ -298,28 +289,34 @@ def check_hours(start_time):
     return after_hours
 
 
-def read_report(filename, mode):
-
+def read_report(source, target, mode):
 
     report = Report()
 
-    # get Data Lake file name from user
+    # check if target file exists and mark report appropriately
+    if os.path.isfile(target):
+        existmsg = " already exists. Report will be appended to existing file."
+        print(target, existmsg)
+        report.new_log = False
+    else:
+        print(target, " was not found. Creating new log file.")
+        report.new_log = True
 
+    # open source file
     try:
-        csvfile = open(filename, newline='')
+        csvfile = open(source, newline='')
 
     except:
         print("Could not open that file. Please check file name")
         sys.exit(0)
 
     else:
-        print("Data Lake file opened successfully...\n")
-
+        print("Data Lake file opened successfully...")
 
     log = csv.DictReader(csvfile, fieldnames= ("chat_id", "start_time",
     "length", "buttons", "user_messages", "bot_gen", "bot_retrieval",
-    "bot_low_conf", "bot_no_conf", "live_request", "live_connect",
-    "rating"))
+        "bot_low_conf", "bot_no_conf", "live_request", "live_connect",
+        "rating"))
 
     next(log)                   # skip first row containing column label
 
@@ -439,7 +436,10 @@ parser.add_option("-s", "--source", action="store", dest="source_file")
 
 
 # read in a report object from a Data Lake .csv
-monthly_report = read_report(options.source_file, options.legacy_mode)
+monthly_report = read_report(
+    options.source_file,
+    options.target_file,
+    options.legacy_mode)
 
 # ask user for month and fical year. This avoids some errors with ivy's data
 monthly_report.get_month()
