@@ -1,13 +1,11 @@
 #!/usr/local/bin/python3
 
 """
-Script for reading Data Lake exports from Ivy.ai
-
-"His palms are sweaty, this is Scott's spaghetti."
 Scott Kirian-Cressey
 https://github.com/kirian-cressey
 skirian@bgsu.edu
 
+Script for digesting Data Lake exports from Ivy.ai into monthy performance logs
 
 Script assumes .csv file exported from Ivy.ai with following filters:
 
@@ -28,7 +26,7 @@ import calendar             #https://docs.python.org/3/library/calendar.html
 import string
 from optparse import OptionParser
 
-#Service Desk hours defined as elapesed minutes of the day
+# service desk hours defined as elapesed minutes of the day
 weekend_open = 660          #11:00am
 weekend_close = 1020        #5:00pm
 weekday_open = 450          #7:30am
@@ -43,14 +41,14 @@ class Report:
     Report assumes a one-month period, but there is nothing stopping a user
     from using another unit of time. Period of time depends on the Data Lake
     file read in, and user will define this period of time (month, fiscal year)
-    through input for month.
+    through interactive input.
     """
 
-    #get from user
+    # get from user
     month = ''                  #i.e. 'October'
     fy = 0                      #fiscal year
 
-    #raw data attributes present in Data Lake csv file
+    # raw data attributes present in Data Lake csv file
     total_user_messages = 0     #sum Messages to Bot
     total_gen = 0               #sum Bot Responses (Generative)
     total_retrieval = 0         #sum Bot Responses (Retrieval)
@@ -60,7 +58,7 @@ class Report:
     total_live_connect = 0      #sum successful connections to live agent
     pushes = 0                  #total number of button clicks
 
-    #After-hours attributes
+    # after-hours attributes
     ah_chats = 0                #unique chats after hours
     ah_gen = 0                  #sum generative responses after hours
     ah_retrieval = 0            #sum retrieval after hours
@@ -71,7 +69,7 @@ class Report:
     ah_resolved = 0             #sum chats with high conf. resp. after hours
     ah_by_percent = 0.0         #percentage of chats occuring after hours
 
-    #Business-hours attributes
+    # business-hours attributes
     bh_chats = 0
     bh_gen = 0                  #sum generative responses during business
     bh_retrieval = 0            #sum retrieval responses during business
@@ -81,7 +79,7 @@ class Report:
     bh_live_connect = 0         #sum successful connections during business
     bh_resolved = 0             #sum chats with high conf. resp during hours
 
-    #calculated attrubutes
+    # calculated attrubutes
     filtered_chats = 0          #chats not counted in total: no time or message
     total_chats = 0             #total number of unique chats
     total_high_conf = 0         #total_retrival + total_gen
@@ -117,7 +115,7 @@ class Report:
         self.total_responses = self.total_gen + self.total_retrieval \
             + self.total_low_conf + self.total_no_conf
 
-        #Avoid division by zero errors for the remaining attributes
+        # avoid division by zero errors for the remaining attributes
         if self.total_responses:
             self.accuracy_rate = self.total_high_conf / self.total_responses
         else: self_accuracy_rate = 0
@@ -174,20 +172,21 @@ class Report:
         Print monthly reporting data to csv file. One line = one month.
         """
 
-        #test if log file already exits and flag new_log accordingly
+        # test if log file already exits and flag new_log accordingly
         new_log = True
 
         if os.path.isfile(target_file):
-            print("Log file already exists. Writing to existing file.\n")
+            print(target_file, " already exists. Appending to existing file.")
+            print("\n")
             new_log = False
         else:
             print("No existing log file was found. Creating new log file.\n")
             new_log = True
 
-        #Write file
+        # write file
         bot_report = open(target_file, 'a')
 
-        #if this is a new log, add column labels
+        # if this is a new log, add column labels
         if new_log:
             header = 'Month,'
             header += 'Fiscal Year,'
@@ -211,15 +210,15 @@ class Report:
 
             bot_report.write(header)
 
-        #write the month's report
+        # write the month's report
         bot_report.write('\n')              #start new month on new line
 
-        #line template
+        # line template
         line = '{month},{year},{filtered},{chats},{nummess},{buttons},'
         line += '{genresp},{retresp},{lowresp},{noresp},{accuracy},{rez},{rating},'
         line += '{reqlive},{connlive},{ahchats},{percentah},{rezah},{live_req_ah},'
 
-        #fill template
+        # fill template
         bot_report.write(line.format(\
             month=self.month,\
             year=self.fy,\
@@ -256,11 +255,11 @@ def check_hours(start_time):
 
     after_hours = False                 #will be returned
 
-    #stripper will remove all punctuation listed on table at
-    #string.punctuation when given as arg to str.translate(arg)
+    # stripper will remove all punctuation listed on table at
+    # string.punctuation when given as arg to str.translate(arg)
     stripper = str.maketrans('', '', string.punctuation)
 
-    #apply stripper to start time and split on spaces
+    # apply stripper to start time and split on spaces
     date = start_time.translate(stripper).split()
 
     month = date[0]
@@ -279,10 +278,10 @@ def check_hours(start_time):
     time_in_mins = (hour * 60) + minute #mins since yesterday
     month_abbr = months[month]
 
-    #day_of_week: Monday = 0, Sunday = 6, etc.
+    # day_of_week: Monday = 0, Sunday = 6, etc.
     day_of_week = calendar.weekday(int(year), month_abbr, int(day))
 
-    #determine if during or after hours
+    # determine if during or after hours
     if day_of_week <= 4:
         if (time_in_mins >= weekday_open) and \
             (time_in_mins <= weekday_close):
@@ -304,7 +303,7 @@ def read_report(filename, mode):
 
     report = Report()
 
-    #Get Data Lake file name from user
+    # get Data Lake file name from user
 
     try:
         csvfile = open(filename, newline='')
@@ -322,33 +321,33 @@ def read_report(filename, mode):
     "bot_low_conf", "bot_no_conf", "live_request", "live_connect",
     "rating"))
 
-    next(log)                   #skip first row containing column label
+    next(log)                   # skip first row containing column label
 
-    #parse file data
+    # parse file data
     for chat in log:
 
-        #flags first of two conditions for "resolved chat"
+        # flags first of two conditions for "resolved chat"
         rez_flag = False
 
-        #flag if button was pushed by user
+        # flag if button was pushed by user
         buttons_pushed = False
 
-        #do not include chats with no time or messages unless buttons used
+        # do not include chats with no time or messages unless buttons used
         if (not chat["length"] or not chat["user_messages"]):
             if chat["buttons"] == "null":
                 report.filtered_chats += 1
                 continue
             else:
-                #Continue to evaluate if buttons were clicked
+                # continue to evaluate if buttons were clicked
                 pass
 
-        #determine if chat was after hours
+        # determine if chat was after hours
         after_hours = check_hours(chat["start_time"])
 
-        #flags first of two conditions for "resolved chat"
+        # flags first of two conditions for "resolved chat"
         rez_flag = False
 
-        #Read in report attributes
+        # read in report attributes
         if after_hours:
             report.ah_chats += 1
         else:
@@ -418,7 +417,7 @@ def read_report(filename, mode):
     csvfile.close()
 
 
-    #report read complete, now get derived attibutes
+    # report read complete, now get derived attibutes
     report.calculate_attributes(mode)
     if report.num_ratings:             #avoid div / 0
         report.average_rating = report.sum_ratings / report.num_ratings
@@ -442,13 +441,13 @@ parser.add_option("-s", "--source", action="store", dest="source_file")
 # read in a report object from a Data Lake .csv
 monthly_report = read_report(options.source_file, options.legacy_mode)
 
-# Ask user for month and fical year. This avoids some errors with ivy's data
+# ask user for month and fical year. This avoids some errors with ivy's data
 monthly_report.get_month()
 
-# Let user inspect the data before writing to log
+# let user inspect the data before writing to log
 monthly_report.print_to_term()
 
-# Ask if the data should be written
+# ask if the data should be written
 while True:
     print("\nWrite this data to log file?")
 
