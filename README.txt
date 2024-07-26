@@ -1,6 +1,15 @@
 README - ivy_reporting.py
 
-Invoke on command line by running $python3 ivy_reporting.py or simply $./ivy_reporting.py.
+Invoke on command line with the the following required arguments:
+'-s sourcefile' where sourcefile is the Ivy Data Lake .csv export.
+'-t targetfile' where targetfile is the name of the log the source info
+    should be read into
+
+Options:
+-l = legacy mode
+
+
+
 Will produce a report file, ivy_log.csv in the directory from which this script is invoked. 
 
 ivy_reporting.py takes as input a .csv file and assumes the following columns of data in the following order:
