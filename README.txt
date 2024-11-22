@@ -8,8 +8,6 @@ Invoke on command line with the the following required arguments:
 Options:
 -l = legacy mode
 
-
-
 Will produce a report file, ivy_log.csv in the directory from which this script is invoked. 
 
 ivy_reporting.py takes as input a .csv file and assumes the following columns of data in the following order:
