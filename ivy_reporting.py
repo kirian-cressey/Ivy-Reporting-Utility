@@ -94,7 +94,7 @@ class Report:
     average_rating = 0          #(sum of ratings / number of chats rated) / 5
 
 
-    def calculate_attributes(self, legacy_mode):
+    def calculate_attributes(self):
 
         self.total_chats = self.ah_chats + self.bh_chats
         self.total_gen = int(self.ah_gen) + int(self.bh_gen)
@@ -104,8 +104,6 @@ class Report:
         # this pointer counts as a retrieval response in Data Lake. Thus,
         # just for opening chat, a retrieval is registered. To adjust for this
         # we do the following for Data Lake pulls prior to April 2024:
-        if legacy_mode == False:
-            self.total_retrieval -= self.total_chats
 
 
         self.total_high_conf = self.total_gen + self.total_retrieval
@@ -289,7 +287,7 @@ def check_hours(start_time):
     return after_hours
 
 
-def read_report(source, target, mode):
+def read_report(source, target):
 
     report = Report()
 
@@ -415,7 +413,7 @@ def read_report(source, target, mode):
 
 
     # report read complete, now get derived attibutes
-    report.calculate_attributes(mode)
+    report.calculate_attributes()
     if report.num_ratings:             #avoid div / 0
         report.average_rating = report.sum_ratings / report.num_ratings
     else:
@@ -427,8 +425,6 @@ def read_report(source, target, mode):
 
 # get options passed through CLI
 parser = OptionParser()
-parser.add_option("-l", "--legacy", action="store_true", dest="legacy_mode",
-    default=False)
 parser.add_option("-t", "--target", action="store", dest="target_file",
     default="ivy_log.csv")
 parser.add_option("-s", "--source", action="store", dest="source_file")
@@ -439,7 +435,7 @@ parser.add_option("-s", "--source", action="store", dest="source_file")
 monthly_report = read_report(
     options.source_file,
     options.target_file,
-    options.legacy_mode)
+    )
 
 # ask user for month and fical year. This avoids some errors with ivy's data
 monthly_report.get_month()
