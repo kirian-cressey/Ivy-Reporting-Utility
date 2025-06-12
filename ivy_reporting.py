@@ -1,5 +1,3 @@
-#!/usr/local/bin/python3
-
 """
 Scott Kirian-Cressey
 https://github.com/kirian-cressey
@@ -177,25 +175,25 @@ class Report:
 
         # if this is a new log, add column labels
         if self.new_log:
-            header = 'Month,'
-            header += 'Fiscal Year,'
-            header += 'Chats Filtered from Results,'
-            header += 'Total Chats,'
-            header += 'Total Messages from Users,'
-            header += 'Total Button Use,'
-            header += 'Total Generative Responses,'
-            header += 'Total Retrieval Responses,'
-            header += 'Total Low-Confidence Responses,'
-            header += 'Total No-Confidence Responses,'
-            header += 'Accuracy Rate,'
-            header += 'Resolution Rate,'
-            header += 'Average Rating,'
-            header += 'Total Live Chat Requests,'
-            header += 'Total Live Chat Connections,'
-            header += 'Total After-hours Chats,'
-            header += 'Percentage of Total Chats Occuring After-hours,'
-            header += 'Chats Resolved After-hours,'
-            header += 'After-hours Live Chat Requests,'
+            header = 'Month,' \
+                'Fiscal Year,' \
+                'Chats Filtered from Results,' \
+                'Total Chats,' \
+                'Total Messages from Users,' \
+                'Total Button Use,' \
+                'Total Generative Responses,' \
+                'Total Retrieval Responses,' \
+                'Total Low-Confidence Responses,' \
+                'Total No-Confidence Responses,' \
+                'Accuracy Rate,' \
+                'Resolution Rate,' \
+                'Average Rating,' \
+                'Total Live Chat Requests,' \
+                'Total Live Chat Connections,' \
+                'Total After-hours Chats,' \
+                'Percentage of Total Chats Occuring After-hours,' \
+                'Chats Resolved After-hours,' \
+                'After-hours Live Chat Requests,'
 
             bot_report.write(header)
 

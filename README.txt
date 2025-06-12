@@ -5,11 +5,6 @@ Invoke on command line with the the following required arguments:
 '-t targetfile' where targetfile is the name of the log the source info
     should be read into
 
-Options:
--l = legacy mode
-
-Will produce a report file, ivy_log.csv in the directory from which this script is invoked. 
-
 ivy_reporting.py takes as input a .csv file and assumes the following columns of data in the following order:
 
 Chat ID, Chat Start Time, Chat Length, Buttons Clicked, Messages to Bot, Bot Responses (Generative), Bot Responses (Retrieval), Bot Responses (Low Confidence), Bot Responses (No Confidence), Attempt to Connect to Live Person, Connection Established, Conversation Rating
